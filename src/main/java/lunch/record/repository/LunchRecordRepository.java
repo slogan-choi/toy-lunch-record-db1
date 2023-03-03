@@ -4,12 +4,18 @@ import lombok.extern.slf4j.Slf4j;
 import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
 
+import java.math.BigDecimal;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Time;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 @Slf4j
 public class LunchRecordRepository {
@@ -30,13 +36,144 @@ public class LunchRecordRepository {
             pstmt.setTime(6, Time.valueOf(lunchRecord.getUpdateAt()));
             pstmt.setTime(7, Time.valueOf(lunchRecord.getCreateAt()));
             pstmt.executeUpdate();
+            return lunchRecord;
         } catch (SQLException e) {
             log.error("db error", e);
             throw e;
         } finally {
             close(con, pstmt, null);
         }
-        return lunchRecord;
+    }
+
+    public List<LunchRecord> findAll() throws SQLException {
+        String sql = "select * from LunchRecord";
+
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        con = getConnection();
+        pstmt = con.prepareStatement(sql);
+
+        rs = pstmt.executeQuery();
+
+        try {
+            List<LunchRecord> lunchRecordList = new ArrayList<>();
+
+            while (rs.next()) {
+                LunchRecord lunchRecord = new LunchRecord();
+                lunchRecord.setId(rs.getInt("id"));
+                lunchRecord.setRestaurant(rs.getString("restaurant"));
+                lunchRecord.setMenu(rs.getString("menu"));
+
+                Blob blob = DBConnectionUtil.getConnection().createBlob();
+                blob.setBytes(1, rs.getBlob("image").getBytes(1, (int) rs.getBlob("image").length()));
+
+                lunchRecord.setImage(blob);
+                lunchRecord.setPrice(rs.getBigDecimal("price"));
+                lunchRecord.setGrade(rs.getFloat("Grade"));
+                lunchRecord.setUpdateAt(rs.getTime("updateAt").toLocalTime());
+                lunchRecord.setCreateAt(rs.getTime("createAt").toLocalTime());
+                lunchRecordList.add(lunchRecord);
+            }
+
+            if (lunchRecordList.isEmpty()) {
+                throw new NoSuchElementException();
+            }
+
+            return lunchRecordList;
+        } catch (SQLException e) {
+            log.error("db error", e);
+            throw e;
+        } finally {
+            close(con, pstmt, rs);
+        }
+    }
+
+    public LunchRecord findById(Integer id) throws SQLException {
+        String sql = "select * from lunchRecord where id = ?";
+
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            con = getConnection();
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, id);
+            rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                LunchRecord lunchRecord = new LunchRecord();
+                lunchRecord.setId(rs.getInt("id"));
+                lunchRecord.setRestaurant(rs.getString("restaurant"));
+                lunchRecord.setMenu(rs.getString("menu"));
+
+                Blob blob = DBConnectionUtil.getConnection().createBlob();
+                blob.setBytes(1, rs.getBlob("image").getBytes(1, (int) rs.getBlob("image").length()));
+
+                lunchRecord.setImage(blob);
+                lunchRecord.setPrice(rs.getBigDecimal("price"));
+                lunchRecord.setGrade(rs.getFloat("Grade"));
+                lunchRecord.setUpdateAt(rs.getTime("updateAt").toLocalTime());
+                lunchRecord.setCreateAt(rs.getTime("createAt").toLocalTime());
+                return lunchRecord;
+            } else {
+                throw new NoSuchElementException();
+            }
+        } catch (SQLException e) {
+            log.error("db error");
+            throw e;
+        } finally {
+            close(con, pstmt, rs);
+        }
+    }
+
+    public void update(Integer id, String restaurant, String menu, Blob image, BigDecimal price, float grade) throws SQLException {
+        String sql = "update lunchRecord set restaurant = ?, menu = ?, image = ?, price = ?, grade = ?, updateAt = ? where id = ?";
+
+        Connection con = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            con = getConnection();
+            pstmt = con.prepareStatement(sql);
+            pstmt.setString(1, restaurant);
+            pstmt.setString(2, menu);
+            pstmt.setBinaryStream(3, image.getBinaryStream());
+            pstmt.setBigDecimal(4, price);
+            pstmt.setFloat(5, grade);
+            pstmt.setTime(6, Time.valueOf(LocalTime.now()));
+            pstmt.setInt(7, id);
+
+            int resultSize = pstmt.executeUpdate();
+            log.info("resultSize={}", resultSize);
+        } catch (SQLException e) {
+            log.error("db error");
+            throw e;
+        } finally {
+            close(con, pstmt, null);
+        }
+    }
+
+    public void delete(int id) throws SQLException {
+        String sql = "delete from lunchRecord where id = ?";
+
+        Connection con = null;
+        PreparedStatement pstmt = null;
+
+        try {
+            con = getConnection();
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, id);
+
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            log.error("db error");
+            throw e;
+        } finally {
+            close(con, pstmt, null);
+        }
     }
 
     private void close(Connection con, Statement stmt, ResultSet rs) {
