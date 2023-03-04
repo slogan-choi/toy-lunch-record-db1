@@ -3,7 +3,9 @@ package lunch.record.repository;
 import lombok.extern.slf4j.Slf4j;
 import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
+import org.springframework.jdbc.support.JdbcUtils;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.Connection;
@@ -19,6 +21,14 @@ import java.util.NoSuchElementException;
 
 @Slf4j
 public class LunchRecordRepository {
+
+    // [DI + OCP]
+    // LunchRecordRepository 는 DataSource 인터페이스에만 의존하기 때문에 DataSource 구현체를 변경해도 LunchRecordRepository 의 코드는 전혀 변경하지 않아도 된다.
+    private final DataSource dataSource;
+
+    public LunchRecordRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     public LunchRecord save(LunchRecord lunchRecord) throws SQLException {
         String sql = "insert into lunchRecord(restaurant, menu, image, price, grade, updateAt, createAt) values(?, ?, ?, ?, ?, ?, ?)";
@@ -52,12 +62,12 @@ public class LunchRecordRepository {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
-        con = getConnection();
-        pstmt = con.prepareStatement(sql);
-
-        rs = pstmt.executeQuery();
-
         try {
+            con = getConnection();
+            pstmt = con.prepareStatement(sql);
+
+            rs = pstmt.executeQuery();
+
             List<LunchRecord> lunchRecordList = new ArrayList<>();
 
             while (rs.next()) {
@@ -177,32 +187,14 @@ public class LunchRecordRepository {
     }
 
     private void close(Connection con, Statement stmt, ResultSet rs) {
-        if (rs != null) {
-            try {
-                rs.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
-
-        if (stmt != null) {
-            try {
-                stmt.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
-
-        if (con != null) {
-            try {
-                con.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
+        JdbcUtils.closeResultSet(rs);
+        JdbcUtils.closeStatement(stmt);
+        JdbcUtils.closeConnection(con);
     }
 
-    private Connection getConnection() {
-        return DBConnectionUtil.getConnection();
+    private Connection getConnection() throws SQLException {
+        Connection con = dataSource.getConnection();
+        log.info("get connection={}, class={}", con, con.getClass());
+        return con;
     }
 }
