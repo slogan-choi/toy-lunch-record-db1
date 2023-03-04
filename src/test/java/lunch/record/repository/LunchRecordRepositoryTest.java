@@ -1,10 +1,13 @@
 package lunch.record.repository;
 
+import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
 import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
 import lunch.record.util.Utils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import java.math.BigDecimal;
 import java.sql.Blob;
@@ -14,13 +17,30 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+import static lunch.record.connection.ConnectionConst.PASSWORD;
+import static lunch.record.connection.ConnectionConst.URL;
+import static lunch.record.connection.ConnectionConst.USERNAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Slf4j
 class LunchRecordRepositoryTest {
 
-    LunchRecordRepository repository = new LunchRecordRepository();
+    LunchRecordRepository repository;
+
+    @BeforeEach
+    void beforeEach() {
+        // 기본 DriverManager - 항상 새로운 커넥션 획득
+//        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+
+        // 커넥션 풀링: HikariProxyConnection -> JdbcConnection
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(URL);
+        dataSource.setUsername(USERNAME);
+        dataSource.setPassword(PASSWORD);
+
+        repository = new LunchRecordRepository(dataSource); // DataSource 의존관계 주입
+    }
 
     @Test
     void crud() throws SQLException {
