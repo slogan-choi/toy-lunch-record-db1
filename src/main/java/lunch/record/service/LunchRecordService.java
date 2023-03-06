@@ -6,6 +6,8 @@ import lunch.record.domain.LunchRecord;
 import lunch.record.domain.LunchRecordGroup;
 import lunch.record.repository.LunchRecordRepository;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LunchRecordService {
 
+    private final DataSource dataSource;
     private final LunchRecordRepository lunchRecordRepository;
 
     public Float getAverageGrade(LunchRecord lunchRecord) throws SQLException {
@@ -50,7 +53,21 @@ public class LunchRecordService {
     }
 
     public void correctAverageGrade() throws SQLException {
-        List<LunchRecord> all = lunchRecordRepository.findAll();
+        Connection con = dataSource.getConnection();
+        try {
+            con.setAutoCommit(false); // 트랜잭션 시작
+            bizLogic(con);
+            con.commit(); // 성공시 커밋
+        } catch (Exception e) {
+            con.rollback(); // 실패시 롤백
+            throw new IllegalStateException(e);
+        } finally {
+            release(con);
+        }
+    }
+
+    private void bizLogic(Connection con) throws SQLException {
+        List<LunchRecord> all = lunchRecordRepository.findAll(con);
 
         // '식당', '메뉴' 2개의 인수로 그룹화
 //        Map<String, Map<String, List<LunchRecord>>> restaurantMap = all.stream()
@@ -74,7 +91,8 @@ public class LunchRecordService {
         for (LunchRecordGroup lunchRecordGroup : collect.keySet()) {
             float averageGrade = (float) (Math.round(collect.get(lunchRecordGroup) * 1000) / 1000.0);
             log.info("restaurant={}, menu={}, averageGrade={}", lunchRecordGroup.restaurant, lunchRecordGroup.menu, averageGrade);
-            lunchRecordRepository.updateAverageGradeByRestaurantMenu(averageGrade, lunchRecordGroup.restaurant, lunchRecordGroup.menu);
+            validation(all);
+            lunchRecordRepository.updateAverageGradeByRestaurantMenu(con, averageGrade, lunchRecordGroup.restaurant, lunchRecordGroup.menu);
         }
     }
 
@@ -83,6 +101,17 @@ public class LunchRecordService {
         for (LunchRecord lunchRecord : lunchRecords) {
             if (lunchRecord.getGrade().equals(0.0f)) {
                 throw new IllegalStateException("평점 평균 적용 중 예외 발생");
+            }
+        }
+    }
+
+    private void release(Connection con) {
+        if (con != null) {
+            try {
+                con.setAutoCommit(true); // 커넥션 풀 고려
+                con.close();
+            } catch (SQLException e) {
+                log.info("error", e);
             }
         }
     }
