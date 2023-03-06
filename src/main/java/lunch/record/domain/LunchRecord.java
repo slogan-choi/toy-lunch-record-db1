@@ -15,10 +15,22 @@ public class LunchRecord {
     private Blob image;
     private BigDecimal price;
     private Float grade;
+    private Float averageGrade;
     private LocalTime updateAt;
     private LocalTime createAt;
 
     public LunchRecord() {
+    }
+
+    public LunchRecord(int id, String restaurant, String menu, Blob image, BigDecimal price, Float grade, LocalTime updateAt, LocalTime createAt) {
+        this.id = id;
+        this.restaurant = restaurant;
+        this.menu = menu;
+        this.image = image;
+        this.price = price;
+        this.grade = grade;
+        this.updateAt = updateAt;
+        this.createAt = createAt;
     }
 
     public LunchRecord(String restaurant, String menu, Blob image, BigDecimal price, Float grade, LocalTime updateAt, LocalTime createAt) {
@@ -27,6 +39,17 @@ public class LunchRecord {
         this.image = image;
         this.price = price;
         this.grade = grade;
+        this.updateAt = updateAt;
+        this.createAt = createAt;
+    }
+
+    public LunchRecord(String restaurant, String menu, Blob image, BigDecimal price, Float grade, Float averageGrade, LocalTime updateAt, LocalTime createAt) {
+        this.restaurant = restaurant;
+        this.menu = menu;
+        this.image = image;
+        this.price = price;
+        this.grade = grade;
+        this.averageGrade = averageGrade;
         this.updateAt = updateAt;
         this.createAt = createAt;
     }
