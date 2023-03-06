@@ -40,12 +40,28 @@ class LunchRecordServiceTest {
         dataSource.setPassword(PASSWORD);
 
         repository = new LunchRecordRepository(dataSource);
-        service = new LunchRecordService(repository);
+        service = new LunchRecordService(dataSource, repository);
     }
 
     @AfterEach
     void after() throws SQLException {
-        service.correctAverageGrade();
+        List<LunchRecord> byRestaurantMenu = repository.findByRestaurantMenu("test", "test");
+
+        try {
+            service.correctAverageGrade();
+        } catch (IllegalStateException e) {
+            assertThatThrownBy(() -> {
+                service.correctAverageGrade();
+            }).isInstanceOf(IllegalStateException.class);
+        }
+        List<LunchRecord> updatedByRestaurantMenu = repository.findByRestaurantMenu("test", "test");
+
+        // 평균 평점 업데이트 반영 전과 반영 후가 그대로이다.
+        assertThat(updatedByRestaurantMenu.stream().map(LunchRecord::getAverageGrade).collect(Collectors.toList()))
+                .usingRecursiveComparison()
+                .isEqualTo(byRestaurantMenu.stream().map(LunchRecord::getAverageGrade).collect(Collectors.toList()));
+
+        repository.deleteAll();
     }
 
     @Test

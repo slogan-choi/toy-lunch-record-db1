@@ -43,7 +43,7 @@ class LunchRecordRepositoryTest {
         dataSource.setPassword(PASSWORD);
 
         repository = new LunchRecordRepository(dataSource); // DataSource 의존관계 주입
-        service = new LunchRecordService(repository);
+        service = new LunchRecordService(dataSource, repository);
     }
 
     @AfterEach
