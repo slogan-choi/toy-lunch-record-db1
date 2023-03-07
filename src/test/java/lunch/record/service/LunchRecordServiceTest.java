@@ -10,6 +10,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -34,13 +37,12 @@ class LunchRecordServiceTest {
 
     @BeforeEach
     void before() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(URL);
-        dataSource.setUsername(USERNAME);
-        dataSource.setPassword(PASSWORD);
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+        // 트랜잭션 매니저는 데이터소스를 통해 커넥션을 생성하므로 DataSource 가 필요하다.
+        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
 
         repository = new LunchRecordRepository(dataSource);
-        service = new LunchRecordService(dataSource, repository);
+        service = new LunchRecordService(transactionManager, repository);
     }
 
     @AfterEach

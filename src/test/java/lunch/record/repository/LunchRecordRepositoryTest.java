@@ -9,6 +9,9 @@ import lunch.record.util.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -34,21 +37,25 @@ class LunchRecordRepositoryTest {
     @BeforeEach
     void beforeEach() {
         // 기본 DriverManager - 항상 새로운 커넥션 획득
-//        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
 
         // 커넥션 풀링: HikariProxyConnection -> JdbcConnection
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(URL);
-        dataSource.setUsername(USERNAME);
-        dataSource.setPassword(PASSWORD);
+//        HikariDataSource dataSource = new HikariDataSource();
+//        dataSource.setJdbcUrl(URL);
+//        dataSource.setUsername(USERNAME);
+//        dataSource.setPassword(PASSWORD);
+
+        // 트랜잭션 매니저는 데이터소스를 통해 커넥션을 생성하므로 DataSource 가 필요하다.
+        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
 
         repository = new LunchRecordRepository(dataSource); // DataSource 의존관계 주입
-        service = new LunchRecordService(dataSource, repository);
+        service = new LunchRecordService(transactionManager, repository);
     }
 
     @AfterEach
     void after() throws SQLException {
         service.correctAverageGrade();
+        repository.deleteAll();
     }
 
     @Test
