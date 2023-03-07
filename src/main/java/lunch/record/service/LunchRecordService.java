@@ -8,6 +8,7 @@ import lunch.record.repository.LunchRecordRepository;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -15,11 +16,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
-@RequiredArgsConstructor
 public class LunchRecordService {
 
-    private final PlatformTransactionManager transactionManager;
+    private final TransactionTemplate txTemplate;
     private final LunchRecordRepository lunchRecordRepository;
+
+    public LunchRecordService(PlatformTransactionManager transactionManager, LunchRecordRepository lunchRecordRepository) {
+        this.txTemplate = new TransactionTemplate(transactionManager);
+        this.lunchRecordRepository = lunchRecordRepository;
+    }
 
     public Float getAverageGrade(LunchRecord lunchRecord) throws SQLException {
         float averageGrade;
@@ -54,16 +59,14 @@ public class LunchRecordService {
     }
 
     public void correctAverageGrade() {
-        // 트랜잭션 시작
-        TransactionStatus status = transactionManager.getTransaction(new DefaultTransactionDefinition());
-        try {
-            // 비지니스 로직
-            bizLogic();
-            transactionManager.commit(status); // 성공시 커밋
-        } catch (Exception e) {
-            transactionManager.rollback(status); // 실패시 롤백
-            throw new IllegalStateException(e);
-        }
+        txTemplate.executeWithoutResult((status) -> {
+            try {
+                // 비지니스 로직
+                bizLogic();
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        });
     }
 
     private void bizLogic() throws SQLException {
