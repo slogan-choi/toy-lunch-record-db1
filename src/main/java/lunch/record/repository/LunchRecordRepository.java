@@ -3,6 +3,7 @@ package lunch.record.repository;
 import lombok.extern.slf4j.Slf4j;
 import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
 
 import javax.sql.DataSource;
@@ -89,9 +90,9 @@ public class LunchRecordRepository {
                 lunchRecordList.add(lunchRecord);
             }
 
-            if (lunchRecordList.isEmpty()) {
-                throw new NoSuchElementException();
-            }
+//            if (lunchRecordList.isEmpty()) {
+//                throw new NoSuchElementException();
+//            }
 
             return lunchRecordList;
         } catch (SQLException e) {
@@ -99,53 +100,6 @@ public class LunchRecordRepository {
             throw e;
         } finally {
             close(con, pstmt, rs);
-        }
-    }
-
-    public List<LunchRecord> findAll(Connection con) throws SQLException {
-        String sql = "select * from LunchRecord";
-
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            con = getConnection();
-            pstmt = con.prepareStatement(sql);
-
-            rs = pstmt.executeQuery();
-
-            List<LunchRecord> lunchRecordList = new ArrayList<>();
-
-            while (rs.next()) {
-                LunchRecord lunchRecord = new LunchRecord();
-                lunchRecord.setId(rs.getInt("id"));
-                lunchRecord.setRestaurant(rs.getString("restaurant"));
-                lunchRecord.setMenu(rs.getString("menu"));
-
-                Blob blob = DBConnectionUtil.getConnection().createBlob();
-                blob.setBytes(1, rs.getBlob("image").getBytes(1, (int) rs.getBlob("image").length()));
-
-                lunchRecord.setImage(blob);
-                lunchRecord.setPrice(rs.getBigDecimal("price"));
-                lunchRecord.setGrade(rs.getFloat("grade"));
-                lunchRecord.setAverageGrade(rs.getFloat("averageGrade"));
-                lunchRecord.setUpdateAt(rs.getTime("updateAt").toLocalTime());
-                lunchRecord.setCreateAt(rs.getTime("createAt").toLocalTime());
-                lunchRecordList.add(lunchRecord);
-            }
-
-            if (lunchRecordList.isEmpty()) {
-                throw new NoSuchElementException();
-            }
-
-            return lunchRecordList;
-        } catch (SQLException e) {
-            log.error("db error", e);
-            throw e;
-        } finally {
-            // Connection 은 여기서 닫지 않는다.
-            JdbcUtils.closeResultSet(rs);
-            JdbcUtils.closeStatement(pstmt);
         }
     }
 
@@ -288,30 +242,6 @@ public class LunchRecordRepository {
         }
     }
 
-    public void updateAverageGradeByRestaurantMenu(Connection con, Float averageGrade, String restaurant, String menu) throws SQLException {
-        String sql = "update lunchRecord set averageGrade = ?, updateAt = ? where restaurant = ? and menu = ?";
-
-        PreparedStatement pstmt = null;
-
-        try {
-            con = getConnection();
-            pstmt = con.prepareStatement(sql);
-            pstmt.setFloat(1, averageGrade);
-            pstmt.setTime(2, Time.valueOf(LocalTime.now()));
-            pstmt.setString(3, restaurant);
-            pstmt.setString(4, menu);
-
-            int resultSize = pstmt.executeUpdate();
-            log.info("resultSize={}", resultSize);
-        } catch (SQLException e) {
-            log.error("db error");
-            throw e;
-        } finally {
-            // Connection 은 여기서 닫지 않는다.
-            JdbcUtils.closeStatement(pstmt);
-        }
-    }
-
     public void delete(int id) throws SQLException {
         String sql = "delete from lunchRecord where id = ?";
 
@@ -354,11 +284,13 @@ public class LunchRecordRepository {
     private void close(Connection con, Statement stmt, ResultSet rs) {
         JdbcUtils.closeResultSet(rs);
         JdbcUtils.closeStatement(stmt);
-        JdbcUtils.closeConnection(con);
+        // 주의! 트랜잭션 동기화를 사용하려면 DataSourceUtils를 사용해야 한다.
+        DataSourceUtils.releaseConnection(con, dataSource);
     }
 
     private Connection getConnection() throws SQLException {
-        Connection con = dataSource.getConnection();
+        // 주의! 트랜잭션 동기화를 사용하려면 DataSourceUtils를 사용해야 한다.
+        Connection con = DataSourceUtils.getConnection(dataSource);
         log.info("get connection={}, class={}", con, con.getClass());
         return con;
     }
