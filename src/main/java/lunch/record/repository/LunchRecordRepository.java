@@ -3,6 +3,7 @@ package lunch.record.repository;
 import lombok.extern.slf4j.Slf4j;
 import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
+import lunch.record.repository.exception.LunchRecordDbException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
 
@@ -21,7 +22,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 @Slf4j
-public class LunchRecordRepository {
+public class LunchRecordRepository implements LunchRecordRepositoryInterface {
 
     // [DI + OCP]
     // LunchRecordRepository 는 DataSource 인터페이스에만 의존하기 때문에 DataSource 구현체를 변경해도 LunchRecordRepository 의 코드는 전혀 변경하지 않아도 된다.
@@ -31,7 +32,7 @@ public class LunchRecordRepository {
         this.dataSource = dataSource;
     }
 
-    public LunchRecord save(LunchRecord lunchRecord) throws SQLException {
+    public LunchRecord save(LunchRecord lunchRecord) {
         String sql = "insert into lunchRecord(restaurant, menu, image, price, grade, averageGrade, updateAt, createAt) values(?, ?, ?, ?, ?, ?, ?, ?)";
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -51,13 +52,13 @@ public class LunchRecordRepository {
             return lunchRecord;
         } catch (SQLException e) {
             log.error("db error", e);
-            throw e;
+            throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, null);
         }
     }
 
-    public List<LunchRecord> findAll() throws SQLException {
+    public List<LunchRecord> findAll() {
         String sql = "select * from LunchRecord";
 
         Connection con = null;
@@ -97,13 +98,13 @@ public class LunchRecordRepository {
             return lunchRecordList;
         } catch (SQLException e) {
             log.error("db error", e);
-            throw e;
+            throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, rs);
         }
     }
 
-    public LunchRecord findById(int id) throws SQLException {
+    public LunchRecord findById(int id) {
         String sql = "select * from lunchRecord where id = ?";
 
         Connection con = null;
@@ -137,13 +138,13 @@ public class LunchRecordRepository {
             }
         } catch (SQLException e) {
             log.error("db error");
-            throw e;
+            throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, rs);
         }
     }
 
-    public List<LunchRecord> findByRestaurantMenu(String restaurant, String menu) throws SQLException {
+    public List<LunchRecord> findByRestaurantMenu(String restaurant, String menu) {
         String sql = "select * from LunchRecord where restaurant = ? and menu = ?";
 
         Connection con = null;
@@ -185,13 +186,13 @@ public class LunchRecordRepository {
             return lunchRecordList;
         } catch (SQLException e) {
             log.info("db error", e);
-            throw e;
+            throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, rs);
         }
     }
 
-    public void update(int id, String restaurant, String menu, Blob image, BigDecimal price, float grade) throws SQLException {
+    public void update(int id, String restaurant, String menu, Blob image, BigDecimal price, float grade) {
         String sql = "update lunchRecord set restaurant = ?, menu = ?, image = ?, price = ?, grade = ?, updateAt = ? where id = ?";
 
         Connection con = null;
@@ -212,13 +213,13 @@ public class LunchRecordRepository {
             log.info("resultSize={}", resultSize);
         } catch (SQLException e) {
             log.error("db error");
-            throw e;
+            throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, null);
         }
     }
 
-    public void updateAverageGradeByRestaurantMenu(Float averageGrade, String restaurant, String menu) throws SQLException {
+    public void updateAverageGradeByRestaurantMenu(Float averageGrade, String restaurant, String menu) {
         String sql = "update lunchRecord set averageGrade = ?, updateAt = ? where restaurant = ? and menu = ?";
 
         Connection con = null;
@@ -236,13 +237,13 @@ public class LunchRecordRepository {
             log.info("resultSize={}", resultSize);
         } catch (SQLException e) {
             log.error("db error");
-            throw e;
+            throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, null);
         }
     }
 
-    public void delete(int id) throws SQLException {
+    public void delete(int id) {
         String sql = "delete from lunchRecord where id = ?";
 
         Connection con = null;
@@ -256,13 +257,13 @@ public class LunchRecordRepository {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error("db error");
-            throw e;
+            throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, null);
         }
     }
 
-    public void deleteAll() throws SQLException {
+    public void deleteAll() {
         String sql = "delete from lunchRecord";
 
         Connection con = null;
@@ -274,7 +275,7 @@ public class LunchRecordRepository {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error("db error");
-            throw e;
+            throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, null);
         }
