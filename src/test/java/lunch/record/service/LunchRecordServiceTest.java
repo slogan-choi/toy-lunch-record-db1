@@ -10,10 +10,16 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Blob;
@@ -30,19 +36,43 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Slf4j
+@SpringBootTest // 테스트 시 스프링 부트를 통해 스프링 컨테이너를 생성, 스프링 빈을 등록, 의존 관계 주입을 받을 수 있도록 한다.
 class LunchRecordServiceTest {
 
+    @Autowired // 스프링 빈으로 등록된 자바 객체로 의존 관계 주입 받는다.
     private LunchRecordRepository repository;
+    @Autowired
     private LunchRecordService service;
 
-    @BeforeEach
-    void before() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource(URL, USERNAME, PASSWORD);
-        // 트랜잭션 매니저는 데이터소스를 통해 커넥션을 생성하므로 DataSource 가 필요하다.
-        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
+    @TestConfiguration // 추가로 필요한 스프링 빈들을 등록하고 테스트를 수행할 수 있다.
+    static class TestConfig {
+        @Bean
+        DataSource dataSource() {
+            return new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+        }
 
-        repository = new LunchRecordRepository(dataSource);
-        service = new LunchRecordService(transactionManager, repository);
+        @Bean
+        PlatformTransactionManager transactionManager() {
+            return new DataSourceTransactionManager(dataSource());
+        }
+
+        @Bean
+        LunchRecordRepository lunchRecordRepository() {
+            return new LunchRecordRepository(dataSource());
+        }
+
+        @Bean
+        LunchRecordService lunchRecordService() {
+            return new LunchRecordService(lunchRecordRepository());
+        }
+    }
+
+    @Test
+    void AopCheck() {
+        log.info("lunchRecordService class={}", service.getClass());
+        log.info("lunchRecordRepository class={}", repository.getClass());
+        assertThat(AopUtils.isAopProxy(service)).isTrue();
+        assertThat(AopUtils.isAopProxy(repository)).isFalse();
     }
 
     @AfterEach
