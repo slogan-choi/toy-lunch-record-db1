@@ -2,7 +2,6 @@ package lunch.record.service;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
 import lunch.record.repository.LunchRecordRepository;
 import lunch.record.repository.LunchRecordRepositoryInterface;
@@ -17,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -24,6 +24,7 @@ import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Blob;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalTime;
 import java.util.Comparator;
@@ -44,6 +45,8 @@ class LunchRecordServiceTest {
     private LunchRecordRepositoryInterface repository;
     @Autowired
     private LunchRecordService service;
+    @Autowired
+    private DataSource dataSource;
 
     @TestConfiguration // 추가로 필요한 스프링 빈들을 등록하고 테스트를 수행할 수 있다.
     static class TestConfig {
@@ -115,7 +118,7 @@ class LunchRecordServiceTest {
         // given
         String restaurant = "test";
         String menu = "test";
-        Blob blob = DBConnectionUtil.getConnection().createBlob();
+        Blob blob = getConnection().createBlob(); // DataSourceUtils.getConnection(dataSource).createBlob();
         blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
         LocalTime createAt = LocalTime.now();
         LocalTime updateAt = LocalTime.now().plusHours(24);
@@ -164,7 +167,7 @@ class LunchRecordServiceTest {
         // given
         String restaurant = "test";
         String menu = "test";
-        Blob blob = DBConnectionUtil.getConnection().createBlob();
+        Blob blob = getConnection().createBlob();
         blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
         LocalTime createAt = LocalTime.now();
         LocalTime updateAt = LocalTime.now().plusHours(24);
@@ -208,5 +211,11 @@ class LunchRecordServiceTest {
         assertThat(updatedByRestaurantMenu.stream().map(LunchRecord::getAverageGrade).collect(Collectors.toList()))
                 .usingRecursiveComparison()
                 .isEqualTo(byRestaurantMenu.stream().map(LunchRecord::getAverageGrade).collect(Collectors.toList()));
+    }
+
+    private Connection getConnection() {
+        Connection con = DataSourceUtils.getConnection(dataSource);
+        log.info("get connection={}, class={}", con, con.getClass());
+        return con;
     }
 }

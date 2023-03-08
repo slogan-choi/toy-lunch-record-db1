@@ -2,7 +2,6 @@ package lunch.record.repository;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
-import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
 import lunch.record.service.LunchRecordService;
 import lunch.record.util.Utils;
@@ -15,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Blob;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalTime;
 import java.util.Comparator;
@@ -42,6 +43,8 @@ class LunchRecordRepositoryTest {
     LunchRecordRepositoryInterface repository;
     @Autowired
     LunchRecordService service;
+    @Autowired
+    DataSource dataSource;
 
     @TestConfiguration // 추가로 필요한 스프링 빈들을 등록하고 테스트를 수행할 수 있다.
     static class TestConfig {
@@ -96,7 +99,7 @@ class LunchRecordRepositoryTest {
 
     @Test
     void crud() throws SQLException {
-        Blob blob = DBConnectionUtil.getConnection().createBlob();
+        Blob blob = getConnection().createBlob();// DataSourceUtils.getConnection(dataSource).createBlob();
         blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
         LocalTime createAt = LocalTime.now();
         LocalTime updateAt = LocalTime.now().plusHours(24);
@@ -136,5 +139,11 @@ class LunchRecordRepositoryTest {
         repository.delete(maxId);
         assertThatThrownBy(() -> repository.findById(maxId))
                         .isInstanceOf(NoSuchElementException.class);
+    }
+
+    private Connection getConnection() {
+        Connection con = DataSourceUtils.getConnection(dataSource);
+        log.info("get connection={}, class={}", con, con.getClass());
+        return con;
     }
 }
