@@ -45,19 +45,33 @@ class LunchRecordRepositoryTest {
 
     @TestConfiguration // 추가로 필요한 스프링 빈들을 등록하고 테스트를 수행할 수 있다.
     static class TestConfig {
-        @Bean
-        DataSource dataSource() {
-            return new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+
+        // 생성자를 통해서 스프링 부트가 만들어준 데이터소스 빈을 주입 받을 수도 있다.
+        private final DataSource dataSource;
+
+        public TestConfig(DataSource dataSource) {
+            this.dataSource = dataSource;
         }
 
-        @Bean
-        PlatformTransactionManager transactionManager() {
-            return new DataSourceTransactionManager(dataSource());
-        }
+//        // 스프링 부트가 만들어준 데이터소스 빈을 의존 관계 주입 받는다.
+//        @Autowired
+//        DataSource dataSource;
+
+//        // 직접 데이터소스를 빈으로 등록하면 스프링 부트는 데이터소스를 자동으로 등록하지 않는다.
+//        @Bean
+//        DataSource dataSource() {
+//            return new DriverManagerDataSource(URL, USERNAME, PASSWORD);
+//        }
+//
+//        // 직접 트랜잭션 매니저를 빈으로 등록하면 스프링 부트는 트랜잭션 매니저를 자동으로 등록하지 않는다.
+//        @Bean
+//        PlatformTransactionManager transactionManager() {
+//            return new DataSourceTransactionManager(dataSource());
+//        }
 
         @Bean
         LunchRecordRepository lunchRecordRepository() {
-            return new LunchRecordRepository(dataSource());
+            return new LunchRecordRepository(dataSource);
         }
 
         @Bean
