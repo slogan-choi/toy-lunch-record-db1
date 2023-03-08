@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
 import lunch.record.repository.LunchRecordRepository;
+import lunch.record.repository.LunchRecordRepositoryInterface;
 import lunch.record.util.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class LunchRecordServiceTest {
 
     @Autowired // 스프링 빈으로 등록된 자바 객체로 의존 관계 주입 받는다.
-    private LunchRecordRepository repository;
+    private LunchRecordRepositoryInterface repository;
     @Autowired
     private LunchRecordService service;
 
@@ -69,7 +70,7 @@ class LunchRecordServiceTest {
 //        }
 
         @Bean
-        LunchRecordRepository lunchRecordRepository() {
+        LunchRecordRepositoryInterface lunchRecordRepository() {
             return new LunchRecordRepository(dataSource);
         }
 
@@ -88,7 +89,7 @@ class LunchRecordServiceTest {
     }
 
     @AfterEach
-    void after() throws SQLException {
+    void after() {
         List<LunchRecord> byRestaurantMenu = repository.findByRestaurantMenu("test", "test");
 
         try {

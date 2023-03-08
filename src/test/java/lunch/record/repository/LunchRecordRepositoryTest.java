@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class LunchRecordRepositoryTest {
 
     @Autowired // 스프링 빈으로 등록된 자바 객체로 의존 관계 주입 받는다.
-    LunchRecordRepository repository;
+    LunchRecordRepositoryInterface repository;
     @Autowired
     LunchRecordService service;
 
@@ -70,7 +70,7 @@ class LunchRecordRepositoryTest {
 //        }
 
         @Bean
-        LunchRecordRepository lunchRecordRepository() {
+        LunchRecordRepositoryInterface lunchRecordRepository() {
             return new LunchRecordRepository(dataSource);
         }
 
