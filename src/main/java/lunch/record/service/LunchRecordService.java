@@ -5,10 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import lunch.record.domain.LunchRecord;
 import lunch.record.domain.LunchRecordGroup;
 import lunch.record.repository.LunchRecordRepository;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -16,15 +13,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
+@RequiredArgsConstructor
 public class LunchRecordService {
 
-    private final TransactionTemplate txTemplate;
     private final LunchRecordRepository lunchRecordRepository;
-
-    public LunchRecordService(PlatformTransactionManager transactionManager, LunchRecordRepository lunchRecordRepository) {
-        this.txTemplate = new TransactionTemplate(transactionManager);
-        this.lunchRecordRepository = lunchRecordRepository;
-    }
 
     public Float getAverageGrade(LunchRecord lunchRecord) throws SQLException {
         float averageGrade;
@@ -58,15 +50,9 @@ public class LunchRecordService {
         return (float) (Math.round(averageGrade * 1000) / 1000.0);
     }
 
-    public void correctAverageGrade() {
-        txTemplate.executeWithoutResult((status) -> {
-            try {
-                // 비지니스 로직
-                bizLogic();
-            } catch (Exception e) {
-                throw new IllegalStateException(e);
-            }
-        });
+    @Transactional
+    public void correctAverageGrade() throws SQLException {
+        bizLogic();
     }
 
     private void bizLogic() throws SQLException {
