@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import lunch.record.domain.LunchRecord;
 import lunch.record.domain.LunchRecordGroup;
 import lunch.record.repository.LunchRecordRepository;
+import lunch.record.repository.LunchRecordRepositoryInterface;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,9 +16,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LunchRecordService {
 
-    private final LunchRecordRepository lunchRecordRepository;
+    private final LunchRecordRepositoryInterface lunchRecordRepository;
 
-    public Float getAverageGrade(LunchRecord lunchRecord) throws SQLException {
+    public Float getAverageGrade(LunchRecord lunchRecord) {
         float averageGrade;
         // 평점 획득
         Float grade = lunchRecord.getGrade();
@@ -51,11 +51,11 @@ public class LunchRecordService {
     }
 
     @Transactional
-    public void correctAverageGrade() throws SQLException {
+    public void correctAverageGrade() {
         bizLogic();
     }
 
-    private void bizLogic() throws SQLException {
+    private void bizLogic() {
         List<LunchRecord> all = lunchRecordRepository.findAll();
 
         // '식당', '메뉴' 2개의 인수로 그룹화
