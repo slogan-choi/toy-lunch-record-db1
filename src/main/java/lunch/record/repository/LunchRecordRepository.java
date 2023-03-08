@@ -1,7 +1,6 @@
 package lunch.record.repository;
 
 import lombok.extern.slf4j.Slf4j;
-import lunch.record.connection.DBConnectionUtil;
 import lunch.record.domain.LunchRecord;
 import lunch.record.repository.exception.LunchRecordDbException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
@@ -79,7 +78,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
                 lunchRecord.setRestaurant(rs.getString("restaurant"));
                 lunchRecord.setMenu(rs.getString("menu"));
 
-                Blob blob = DBConnectionUtil.getConnection().createBlob();
+                Blob blob = getConnection().createBlob();
                 blob.setBytes(1, rs.getBlob("image").getBytes(1, (int) rs.getBlob("image").length()));
 
                 lunchRecord.setImage(blob);
@@ -123,7 +122,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
                 lunchRecord.setRestaurant(rs.getString("restaurant"));
                 lunchRecord.setMenu(rs.getString("menu"));
 
-                Blob blob = DBConnectionUtil.getConnection().createBlob();
+                Blob blob = getConnection().createBlob();
                 blob.setBytes(1, rs.getBlob("image").getBytes(1, (int) rs.getBlob("image").length()));
 
                 lunchRecord.setImage(blob);
@@ -166,7 +165,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
                 lunchRecord.setRestaurant(rs.getString("restaurant"));
                 lunchRecord.setMenu(rs.getString("menu"));
 
-                Blob blob = DBConnectionUtil.getConnection().createBlob();
+                Blob blob = getConnection().createBlob();
                 blob.setBytes(1, rs.getBlob("image").getBytes(1, (int) rs.getBlob("image").length()));
 
                 lunchRecord.setImage(blob);
