@@ -3,6 +3,7 @@ package lunch.record.repository;
 import lombok.extern.slf4j.Slf4j;
 import lunch.record.domain.LunchRecord;
 import lunch.record.repository.exception.LunchRecordDbException;
+import lunch.record.repository.exception.ValueTooLongException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
 
@@ -51,6 +52,10 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             return lunchRecord;
         } catch (SQLException e) {
             log.error("db error", e);
+            // h2 db
+            if (e.getErrorCode() == 22001) {
+                throw new ValueTooLongException(e, e.getErrorCode());
+            }
             throw new LunchRecordDbException(e);
         } finally {
             close(con, pstmt, null);
@@ -97,7 +102,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             return lunchRecordList;
         } catch (SQLException e) {
             log.error("db error", e);
-            throw new LunchRecordDbException(e);
+            throw new ValueTooLongException(e);
         } finally {
             close(con, pstmt, rs);
         }
@@ -137,7 +142,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             }
         } catch (SQLException e) {
             log.error("db error");
-            throw new LunchRecordDbException(e);
+            throw new ValueTooLongException(e);
         } finally {
             close(con, pstmt, rs);
         }
@@ -185,7 +190,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             return lunchRecordList;
         } catch (SQLException e) {
             log.info("db error", e);
-            throw new LunchRecordDbException(e);
+            throw new ValueTooLongException(e);
         } finally {
             close(con, pstmt, rs);
         }
@@ -212,7 +217,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             log.info("resultSize={}", resultSize);
         } catch (SQLException e) {
             log.error("db error");
-            throw new LunchRecordDbException(e);
+            throw new ValueTooLongException(e);
         } finally {
             close(con, pstmt, null);
         }
@@ -236,7 +241,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             log.info("resultSize={}", resultSize);
         } catch (SQLException e) {
             log.error("db error");
-            throw new LunchRecordDbException(e);
+            throw new ValueTooLongException(e);
         } finally {
             close(con, pstmt, null);
         }
@@ -256,7 +261,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             log.error("db error");
-            throw new LunchRecordDbException(e);
+            throw new ValueTooLongException(e);
         } finally {
             close(con, pstmt, null);
         }
