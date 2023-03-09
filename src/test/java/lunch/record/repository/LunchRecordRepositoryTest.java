@@ -92,14 +92,14 @@ class LunchRecordRepositoryTest {
     }
 
     @AfterEach
-    void after() throws SQLException {
+    void after() {
         service.correctAverageGrade();
         repository.deleteAll();
     }
 
     @Test
     void crud() throws SQLException {
-        Blob blob = getConnection().createBlob();// DataSourceUtils.getConnection(dataSource).createBlob();
+        Blob blob = getConnection().createBlob();
         blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
         LocalTime createAt = LocalTime.now();
         LocalTime updateAt = LocalTime.now().plusHours(24);
