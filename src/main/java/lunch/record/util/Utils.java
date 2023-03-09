@@ -47,4 +47,37 @@ public class Utils {
         }
         return returnValue;
     }
+
+    public static String substringByBytes(String str, int beginBytes, int endBytes) {
+        if (str == null || str.length() == 0) {
+            return "";
+        }
+
+        if (beginBytes < 0) {
+            beginBytes = 0;
+        }
+
+        if (endBytes < 1) {
+            return "";
+        }
+
+        int length = str.length();
+        int beginIndex = -1;
+        int endIndex = 0;
+        int currentBytes = 0;
+
+        for (int index = 0; index < length; index++) {
+            currentBytes += String.valueOf(str.charAt(index)).getBytes().length;
+            if (beginIndex == -1 && currentBytes >= beginBytes) {
+                beginIndex = index;
+            }
+            if (currentBytes > endBytes) {
+                break;
+            } else {
+                endIndex = index+1;
+            }
+        }
+
+        return str.substring(beginIndex, endIndex);
+    }
 }
