@@ -2,10 +2,10 @@ package lunch.record.repository;
 
 import lombok.extern.slf4j.Slf4j;
 import lunch.record.domain.LunchRecord;
-import lunch.record.repository.exception.LunchRecordDbException;
-import lunch.record.repository.exception.ValueTooLongException;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.support.JdbcUtils;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
+import org.springframework.jdbc.support.SQLExceptionTranslator;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -20,6 +20,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 @Slf4j
 public class LunchRecordRepository implements LunchRecordRepositoryInterface {
@@ -27,11 +28,14 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
     // [DI + OCP]
     // LunchRecordRepository 는 DataSource 인터페이스에만 의존하기 때문에 DataSource 구현체를 변경해도 LunchRecordRepository 의 코드는 전혀 변경하지 않아도 된다.
     private final DataSource dataSource;
+    private final SQLExceptionTranslator exTranslator;
 
     public LunchRecordRepository(DataSource dataSource) {
         this.dataSource = dataSource;
+        this.exTranslator = new SQLErrorCodeSQLExceptionTranslator(dataSource);
     }
 
+    @Override
     public LunchRecord save(LunchRecord lunchRecord) {
         String sql = "insert into lunchRecord(restaurant, menu, image, price, grade, averageGrade, updateAt, createAt) values(?, ?, ?, ?, ?, ?, ?, ?)";
         Connection con = null;
@@ -51,17 +55,13 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             pstmt.executeUpdate();
             return lunchRecord;
         } catch (SQLException e) {
-            log.error("db error", e);
-            // h2 db
-            if (e.getErrorCode() == 22001) {
-                throw new ValueTooLongException(e, e.getErrorCode());
-            }
-            throw new LunchRecordDbException(e);
+            throw Objects.requireNonNull(exTranslator.translate("save", sql, e));
         } finally {
             close(con, pstmt, null);
         }
     }
 
+    @Override
     public List<LunchRecord> findAll() {
         String sql = "select * from LunchRecord";
 
@@ -101,13 +101,13 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
 
             return lunchRecordList;
         } catch (SQLException e) {
-            log.error("db error", e);
-            throw new ValueTooLongException(e);
+            throw Objects.requireNonNull(exTranslator.translate("findAll", sql, e));
         } finally {
             close(con, pstmt, rs);
         }
     }
 
+    @Override
     public LunchRecord findById(int id) {
         String sql = "select * from lunchRecord where id = ?";
 
@@ -141,13 +141,13 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
                 throw new NoSuchElementException();
             }
         } catch (SQLException e) {
-            log.error("db error");
-            throw new ValueTooLongException(e);
+            throw Objects.requireNonNull(exTranslator.translate("findById", sql, e));
         } finally {
             close(con, pstmt, rs);
         }
     }
 
+    @Override
     public List<LunchRecord> findByRestaurantMenu(String restaurant, String menu) {
         String sql = "select * from LunchRecord where restaurant = ? and menu = ?";
 
@@ -189,13 +189,13 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
 
             return lunchRecordList;
         } catch (SQLException e) {
-            log.info("db error", e);
-            throw new ValueTooLongException(e);
+            throw exTranslator.translate("findByRestaurantMenu", sql, e);
         } finally {
             close(con, pstmt, rs);
         }
     }
 
+    @Override
     public void update(int id, String restaurant, String menu, Blob image, BigDecimal price, float grade) {
         String sql = "update lunchRecord set restaurant = ?, menu = ?, image = ?, price = ?, grade = ?, updateAt = ? where id = ?";
 
@@ -216,13 +216,13 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             int resultSize = pstmt.executeUpdate();
             log.info("resultSize={}", resultSize);
         } catch (SQLException e) {
-            log.error("db error");
-            throw new ValueTooLongException(e);
+            throw Objects.requireNonNull(exTranslator.translate("update", sql, e));
         } finally {
             close(con, pstmt, null);
         }
     }
 
+    @Override
     public void updateAverageGradeByRestaurantMenu(Float averageGrade, String restaurant, String menu) {
         String sql = "update lunchRecord set averageGrade = ?, updateAt = ? where restaurant = ? and menu = ?";
 
@@ -240,13 +240,13 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             int resultSize = pstmt.executeUpdate();
             log.info("resultSize={}", resultSize);
         } catch (SQLException e) {
-            log.error("db error");
-            throw new ValueTooLongException(e);
+            throw exTranslator.translate("updateAverageGradeByRestaurantMenu", sql, e);
         } finally {
             close(con, pstmt, null);
         }
     }
 
+    @Override
     public void delete(int id) {
         String sql = "delete from lunchRecord where id = ?";
 
@@ -260,13 +260,13 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
 
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error("db error");
-            throw new ValueTooLongException(e);
+            throw exTranslator.translate("delete", sql, e);
         } finally {
             close(con, pstmt, null);
         }
     }
 
+    @Override
     public void deleteAll() {
         String sql = "delete from lunchRecord";
 
@@ -278,8 +278,7 @@ public class LunchRecordRepository implements LunchRecordRepositoryInterface {
             pstmt = con.prepareStatement(sql);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            log.error("db error");
-            throw new LunchRecordDbException(e);
+            throw exTranslator.translate("deleteAll", sql, e);
         } finally {
             close(con, pstmt, null);
         }
