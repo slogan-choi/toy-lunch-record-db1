@@ -6,6 +6,9 @@ import lunch.record.domain.LunchRecord;
 import lunch.record.domain.LunchRecordGroup;
 import lunch.record.repository.LunchRecordRepository;
 import lunch.record.repository.LunchRecordRepositoryInterface;
+import lunch.record.repository.exception.LunchRecordDbException;
+import lunch.record.repository.exception.ValueTooLongException;
+import lunch.record.util.Utils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -53,6 +56,25 @@ public class LunchRecordService {
     @Transactional
     public void correctAverageGrade() {
         bizLogic();
+    }
+
+    @Transactional
+    public void create(LunchRecord lunchRecord) {
+        try {
+            lunchRecordRepository.save(lunchRecord);
+            log.info("save lunchRecord={}", lunchRecord);
+        } catch (ValueTooLongException e) {
+            log.info("errorCode={}, cause", e.getErrorCode(), e.getCause());
+            String restaurant = Utils.substringByBytes(lunchRecord.getRestaurant(), 0, 255);
+            String menu = Utils.substringByBytes(lunchRecord.getMenu(), 0, 255);
+            log.info("[복구 시도] retry restaurant={}, retry menu={}", restaurant, menu);
+            lunchRecord.setRestaurant(restaurant);
+            lunchRecord.setMenu(menu);
+            lunchRecordRepository.save(lunchRecord);
+        } catch (LunchRecordDbException e) {
+            log.info("데이터 접근 계층 예외", e);
+            throw e;
+        }
     }
 
     private void bizLogic() {
