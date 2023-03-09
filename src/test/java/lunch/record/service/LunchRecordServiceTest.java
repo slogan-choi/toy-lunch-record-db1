@@ -118,7 +118,7 @@ class LunchRecordServiceTest {
         // given
         String restaurant = "test";
         String menu = "test";
-        Blob blob = getConnection().createBlob(); // DataSourceUtils.getConnection(dataSource).createBlob();
+        Blob blob = getConnection().createBlob();
         blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
         LocalTime createAt = LocalTime.now();
         LocalTime updateAt = LocalTime.now().plusHours(24);
@@ -211,6 +211,20 @@ class LunchRecordServiceTest {
         assertThat(updatedByRestaurantMenu.stream().map(LunchRecord::getAverageGrade).collect(Collectors.toList()))
                 .usingRecursiveComparison()
                 .isEqualTo(byRestaurantMenu.stream().map(LunchRecord::getAverageGrade).collect(Collectors.toList()));
+    }
+
+    @Test
+    void create() throws SQLException {
+        // given
+        String restaurant = "test";
+        String menu = "test";
+        Blob blob = getConnection().createBlob();
+        blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
+        LocalTime createAt = LocalTime.now();
+
+        LunchRecord newLunchRecord = new LunchRecord(restaurant, menu, blob, BigDecimal.ONE, 4.0f, 4.0f, createAt, createAt);
+        LunchRecord savedLunchRecord = service.create(newLunchRecord);
+        assertThat(newLunchRecord).isEqualTo(savedLunchRecord);
     }
 
     private Connection getConnection() {
