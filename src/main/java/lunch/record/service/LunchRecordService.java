@@ -59,18 +59,23 @@ public class LunchRecordService {
     }
 
     @Transactional
-    public void create(LunchRecord lunchRecord) {
+    public LunchRecord create(LunchRecord lunchRecord) {
         try {
-            lunchRecordRepository.save(lunchRecord);
-            log.info("save lunchRecord={}", lunchRecord);
+            LunchRecord savedLunchRecord = lunchRecordRepository.save(lunchRecord);
+            log.info("save lunchRecord={}", savedLunchRecord);
+            return savedLunchRecord;
         } catch (ValueTooLongException e) {
             log.info("errorCode={}, cause", e.getErrorCode(), e.getCause());
+
             String restaurant = Utils.substringByBytes(lunchRecord.getRestaurant(), 0, 255);
             String menu = Utils.substringByBytes(lunchRecord.getMenu(), 0, 255);
             log.info("[복구 시도] retry restaurant={}, retry menu={}", restaurant, menu);
             lunchRecord.setRestaurant(restaurant);
             lunchRecord.setMenu(menu);
-            lunchRecordRepository.save(lunchRecord);
+
+            LunchRecord savedLunchRecord = lunchRecordRepository.save(lunchRecord);
+            log.info("save lunchRecord={}", savedLunchRecord);
+            return savedLunchRecord;
         } catch (LunchRecordDbException e) {
             log.info("데이터 접근 계층 예외", e);
             throw e;
