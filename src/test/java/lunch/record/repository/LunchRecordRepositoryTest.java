@@ -13,12 +13,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import javax.sql.rowset.serial.SerialBlob;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Blob;
@@ -43,8 +45,6 @@ class LunchRecordRepositoryTest {
     LunchRecordRepositoryInterface repository;
     @Autowired
     LunchRecordService service;
-    @Autowired
-    DataSource dataSource;
 
     @TestConfiguration // 추가로 필요한 스프링 빈들을 등록하고 테스트를 수행할 수 있다.
     static class TestConfig {
@@ -99,8 +99,7 @@ class LunchRecordRepositoryTest {
 
     @Test
     void crud() throws SQLException {
-        Blob blob = getConnection().createBlob();
-        blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
+        Blob blob = new SerialBlob(Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
         LocalTime createAt = LocalTime.now();
         LocalTime updateAt = LocalTime.now().plusHours(24);
 
@@ -138,12 +137,6 @@ class LunchRecordRepositoryTest {
                 .getId();
         repository.delete(maxId);
         assertThatThrownBy(() -> repository.findById(maxId))
-                        .isInstanceOf(NoSuchElementException.class);
-    }
-
-    private Connection getConnection() {
-        Connection con = DataSourceUtils.getConnection(dataSource);
-        log.info("get connection={}, class={}", con, con.getClass());
-        return con;
+                        .isInstanceOf(EmptyResultDataAccessException.class);
     }
 }
