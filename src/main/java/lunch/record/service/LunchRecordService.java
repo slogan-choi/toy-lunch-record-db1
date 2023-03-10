@@ -9,8 +9,12 @@ import lunch.record.repository.LunchRecordRepositoryInterface;
 import lunch.record.repository.exception.LunchRecordDbException;
 import lunch.record.repository.exception.ValueTooLongException;
 import lunch.record.util.Utils;
+import org.springframework.core.NestedRuntimeException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -64,8 +68,8 @@ public class LunchRecordService {
             LunchRecord savedLunchRecord = lunchRecordRepository.save(lunchRecord);
             log.info("save lunchRecord={}", savedLunchRecord);
             return savedLunchRecord;
-        } catch (ValueTooLongException e) {
-            log.info("errorCode={}, cause", e.getErrorCode(), e.getCause());
+        } catch (DataIntegrityViolationException e) {
+            log.info("cause", e.getCause());
 
             String restaurant = Utils.substringByBytes(lunchRecord.getRestaurant(), 0, 255);
             String menu = Utils.substringByBytes(lunchRecord.getMenu(), 0, 255);
@@ -76,7 +80,7 @@ public class LunchRecordService {
             LunchRecord savedLunchRecord = lunchRecordRepository.save(lunchRecord);
             log.info("save lunchRecord={}", savedLunchRecord);
             return savedLunchRecord;
-        } catch (LunchRecordDbException e) {
+        } catch (NestedRuntimeException e) {
             log.info("데이터 접근 계층 예외", e);
             throw e;
         }
