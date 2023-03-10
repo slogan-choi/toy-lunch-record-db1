@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 
 import javax.sql.DataSource;
+import javax.sql.rowset.serial.SerialBlob;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.SQLException;
@@ -26,8 +27,6 @@ class ValueTooLongExceptionTest {
     LunchRecordRepositoryInterface repository;
     @Autowired
     LunchRecordService service;
-    @Autowired
-    DataSource dataSource;
 
     @TestConfiguration
     static class TestConfig {
@@ -59,10 +58,8 @@ class ValueTooLongExceptionTest {
         menu.append("The Double Ristretto Venti Half-Soy Nonfat Decaf Organic Chocolate Brownie Iced Vanilla Double-Shot Gingerbread Frappuccino Extra Hot With Foam Whipped Cream Upside Down Double Blended, One Sweet'N Low and One Nutrasweet, and Ice");
         menu.append("The Double Ristretto Venti Half-Soy Nonfat Decaf Organic Chocolate Brownie Iced Vanilla Double-Shot Gingerbread Frappuccino Extra Hot With Foam Whipped Cream Upside Down Double Blended, One Sweet'N Low and One Nutrasweet, and Ice");
 
-        Blob blob = DataSourceUtils.getConnection(dataSource).createBlob();
-        blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
-        LocalTime createAt = LocalTime.now();
+        Blob blob = new SerialBlob(Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
 
-        service.create(new LunchRecord(restaurant.toString(), menu.toString(), blob, BigDecimal.ONE, 4.0f, 4.0f, createAt, createAt));
+        service.create(new LunchRecord(restaurant.toString(), menu.toString(), blob, BigDecimal.ONE, 4.0f, 4.0f));
     }
 }
