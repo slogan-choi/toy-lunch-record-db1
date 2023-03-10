@@ -21,6 +21,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
+import javax.sql.rowset.serial.SerialBlob;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Blob;
@@ -45,8 +46,6 @@ class LunchRecordServiceTest {
     private LunchRecordRepositoryInterface repository;
     @Autowired
     private LunchRecordService service;
-    @Autowired
-    private DataSource dataSource;
 
     @TestConfiguration // 추가로 필요한 스프링 빈들을 등록하고 테스트를 수행할 수 있다.
     static class TestConfig {
@@ -118,8 +117,7 @@ class LunchRecordServiceTest {
         // given
         String restaurant = "test";
         String menu = "test";
-        Blob blob = getConnection().createBlob();
-        blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
+        Blob blob = new SerialBlob(Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
         LocalTime createAt = LocalTime.now();
         LocalTime updateAt = LocalTime.now().plusHours(24);
 
@@ -167,8 +165,7 @@ class LunchRecordServiceTest {
         // given
         String restaurant = "test";
         String menu = "test";
-        Blob blob = getConnection().createBlob();
-        blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
+        Blob blob = new SerialBlob(Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
         LocalTime createAt = LocalTime.now();
         LocalTime updateAt = LocalTime.now().plusHours(24);
 
@@ -218,18 +215,15 @@ class LunchRecordServiceTest {
         // given
         String restaurant = "test";
         String menu = "test";
-        Blob blob = getConnection().createBlob();
-        blob.setBytes(1, Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
-        LocalTime createAt = LocalTime.now();
+        Blob blob = new SerialBlob(Utils.imageToByteArray("/Users/ghc/development/img/test.png"));
 
-        LunchRecord newLunchRecord = new LunchRecord(restaurant, menu, blob, BigDecimal.ONE, 4.0f, 4.0f, createAt, createAt);
+        LunchRecord newLunchRecord = new LunchRecord(restaurant, menu, blob, BigDecimal.ONE, 4.0f, 4.0f);
         LunchRecord savedLunchRecord = service.create(newLunchRecord);
-        assertThat(newLunchRecord).isEqualTo(savedLunchRecord);
-    }
-
-    private Connection getConnection() {
-        Connection con = DataSourceUtils.getConnection(dataSource);
-        log.info("get connection={}, class={}", con, con.getClass());
-        return con;
+        assertThat(newLunchRecord)
+                .usingRecursiveComparison()
+                .ignoringFields("id")
+                .ignoringFields("updateAt")
+                .ignoringFields("createAt")
+                .isEqualTo(savedLunchRecord);
     }
 }
