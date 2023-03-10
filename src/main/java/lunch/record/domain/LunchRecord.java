@@ -33,6 +33,15 @@ public class LunchRecord {
         this.createAt = createAt;
     }
 
+    public LunchRecord(String restaurant, String menu, Blob image, BigDecimal price, Float grade, Float averageGrade) {
+        this.restaurant = restaurant;
+        this.menu = menu;
+        this.image = image;
+        this.price = price;
+        this.grade = grade;
+        this.averageGrade = averageGrade;
+    }
+
     public LunchRecord(String restaurant, String menu, Blob image, BigDecimal price, Float grade, LocalTime updateAt, LocalTime createAt) {
         this.restaurant = restaurant;
         this.menu = menu;
